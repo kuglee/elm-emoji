@@ -23,7 +23,6 @@ some extra assumptions about the app, and customizable mapping over emojis.
 -}
 
 import Emoji.Internal.Parse exposing (..)
-import Emoji.Internal.Valid
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import List
@@ -57,7 +56,7 @@ Html nodes.
         ( textWith mapEmoji "here's a penguin:🐧" )
 
 -}
-textWith : ({ codepts : List String, shortname : String } -> Html a) -> String -> List (Html a)
+textWith : ({ codepts : List String, char : String, shortname : String } -> Html a) -> String -> List (Html a)
 textWith replacer body =
     let
         (String_ chunks) =
@@ -69,8 +68,8 @@ textWith replacer body =
                 StringChunk s ->
                     text s
 
-                CodeChunk ( codepts, shortname ) ->
-                    replacer { codepts = codepts, shortname = shortname }
+                CodeChunk ( codepts, char, shortname ) ->
+                    replacer { codepts = codepts, char = char, shortname = shortname }
         )
         chunks
 
@@ -80,23 +79,23 @@ fromEmoji =
     fromEmojiWith replaceWithEmojiOne
 
 
-fromEmojiWith : ({ codepts : List String, shortname : String } -> Html a) -> String -> Maybe (Html a)
+fromEmojiWith : ({ codepts : List String, char : String, shortname : String } -> Html a) -> String -> Maybe (Html a)
 fromEmojiWith replacer emoji =
     case Emoji.Internal.Parse.splitPrefix emoji of
         ( ( 0, _, _ ), _ ) ->
             Nothing
 
-        ( ( matchLen, matchCodes, matchShortName ), remaining ) ->
+        ( ( matchLen, matchCodes, ( matchChar, matchShortName ) ), remaining ) ->
             if String.length remaining > 0 then
                 --What to do with remaining?
                 --We could say that it doesn't match at all if it isn't a complete match and return Nothing
                 --That strategy doesn't work, however, with this at the end "♂️" but only with "♂" I believe the difference
                 -- is the emoji selector and I don't want that to be the issue... perhaps leave it for now.
                 -- Nothing
-                Just (replacer { codepts = matchCodes, shortname = matchShortName })
+                Just (replacer { codepts = matchCodes, char = matchChar, shortname = matchShortName })
 
             else
-                Just (replacer { codepts = matchCodes, shortname = matchShortName })
+                Just (replacer { codepts = matchCodes, char = matchChar, shortname = matchShortName })
 
 
 {-| Turn an emoji unicode sequence into an `<img>` pointing at
@@ -107,7 +106,7 @@ fromEmojiWith replacer emoji =
         textWith replaceWithEmojiOne >> span [ class "elm-emoji" ]
 
 -}
-replaceWithEmojiOne : { codepts : List String, shortname : String } -> Html a
+replaceWithEmojiOne : { codepts : List String, char : String, shortname : String } -> Html a
 replaceWithEmojiOne emoji =
     img
         [ src <| urlWithBase emojiOneV4BaseUrl <| removeVariationSelectors <| removeJoiners emoji.codepts
@@ -147,7 +146,7 @@ removeJoiners =
     List.filter (String.toUpper >> isJoiner >> not)
 
 
-{-| EmojioOe file names require the variation selectors to be removed
+{-| EmojioOne file names require the variation selectors to be removed
 -}
 removeVariationSelectors : List String -> List String
 removeVariationSelectors =

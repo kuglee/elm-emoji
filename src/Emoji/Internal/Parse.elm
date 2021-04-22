@@ -8,7 +8,7 @@ import String
 
 type Chunk
     = StringChunk String
-    | CodeChunk ( List String, String )
+    | CodeChunk ( List String, String, String )
 
 
 type String_
@@ -43,7 +43,7 @@ parse_ buf accum string =
                         Just ( c, rest ) ->
                             parse_ (String.cons c buf) accum rest
 
-                ( ( matchLen, matchCodes, shortname ), remaining ) ->
+                ( ( matchLen, matchCodes, ( char, shortname ) ), remaining ) ->
                     let
                         nextAccum =
                             if buf == "" then
@@ -52,7 +52,7 @@ parse_ buf accum string =
                             else
                                 StringChunk (String.reverse buf) :: accum
                     in
-                    parse_ "" (CodeChunk ( matchCodes, shortname ) :: nextAccum) remaining
+                    parse_ "" (CodeChunk ( matchCodes, char, shortname ) :: nextAccum) remaining
 
 
 dropLeft : Int -> String -> String
@@ -67,18 +67,18 @@ dropLeft n string =
             |> Maybe.withDefault string
 
 
-splitPrefix : String -> ( ( Int, List String, String ), String )
+splitPrefix : String -> ( ( Int, List String, ( String, String ) ), String )
 splitPrefix string =
     let
-        ( len, code, shortname ) =
-            findPrefix ( 0, [], "" ) 0 string store
+        ( len, code, ( char, shortname ) ) =
+            findPrefix ( 0, [], ( "", "" ) ) 0 string store
     in
-    ( ( len, code, shortname )
+    ( ( len, code, ( char, shortname ) )
     , dropLeft len string
     )
 
 
-findPrefix : ( Int, List String, String ) -> Int -> String -> Store -> ( Int, List String, String )
+findPrefix : ( Int, List String, ( String, String ) ) -> Int -> String -> Store -> ( Int, List String, ( String, String ) )
 findPrefix lastFound count string store =
     if count > longest then
         lastFound
@@ -92,7 +92,7 @@ findPrefix lastFound count string store =
                 Maybe.withDefault
                     lastFound
                     (Maybe.map
-                        (\( code, shortname ) -> ( count, code, shortname ))
+                        (\( code, char, shortname ) -> ( count, code, ( char, shortname ) ))
                         foundCode
                     )
         in
