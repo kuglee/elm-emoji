@@ -1,6 +1,7 @@
 module Emoji exposing
     ( text_, fromEmoji
     , textWith, fromEmojiWith, replaceWithEmojiOne, replaceWithTwemoji, removeJoiners
+    , rawHtmlStringWith, replaceRawHtmlStringWithTwemoji
     )
 
 {-| This library is for conveniently supporting
@@ -74,6 +75,25 @@ textWith replacer body =
         chunks
 
 
+rawHtmlStringWith : ({ codepts : List String, char : String, shortname : String } -> String) -> String -> String
+rawHtmlStringWith replacer body =
+    let
+        (String_ chunks) =
+            parse body
+    in
+    String.concat <|
+        List.map
+            (\chunk ->
+                case chunk of
+                    StringChunk s ->
+                        s
+
+                    CodeChunk ( codepts, char, shortname ) ->
+                        replacer { codepts = codepts, char = char, shortname = shortname }
+            )
+            chunks
+
+
 fromEmoji : String -> Maybe (Html a)
 fromEmoji =
     fromEmojiWith replaceWithEmojiOne
@@ -133,6 +153,15 @@ replaceWithTwemoji emoji =
         , title emoji.shortname
         ]
         []
+
+
+replaceRawHtmlStringWithTwemoji : String -> { codepts : List String, char : String, shortname : String } -> String
+replaceRawHtmlStringWithTwemoji styleText emoji =
+    "<img draggable=\"false\" class=\"elm-emoji-img elm-emoji-twem\" src=\" "
+        ++ urlWithBase twemojiBaseUrl emoji.codepts
+        ++ "\""
+        ++ (" alt=\"" ++ emoji.char ++ "\"")
+        ++ ("style=\"" ++ styleText ++ "\">")
 
 
 {-| EmojiOne file names require the zero-width-joiners and variation selectors to be removed
