@@ -128,13 +128,31 @@ classes `elm-emoji-img` and `elm-emoji-twem`.
 -}
 replaceWithTwemoji : { codepts : List String, shortname : String } -> Html a
 replaceWithTwemoji emoji =
+    let
+        url =
+            if hasJoiners emoji.codepts then
+                urlWithBase twemojiBaseUrl emoji.codepts
+
+            else
+                urlWithBase twemojiBaseUrl (removeVariationSelectors emoji.codepts)
+    in
     img
-        [ src <| urlWithBase twemojiBaseUrl emoji.codepts
+        [ src <| url
         , class "elm-emoji-img elm-emoji-twem"
         , title emoji.shortname
         ]
         []
 
+
+{-| Twemoji file names require variation selectors only when joiners are present
+-}
+hasJoiners : List String -> Bool
+hasJoiners =
+    let
+        isJoiner c =
+            c == "200D"
+    in
+    List.any (String.toUpper >> isJoiner)
 
 {-| EmojiOne file names require the zero-width-joiners and variation selectors to be removed
 -}
